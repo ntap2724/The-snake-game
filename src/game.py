@@ -179,10 +179,6 @@ class SnakeGame:
         self.game_over = True
         self.current_state = STATE_GAME_OVER
         
-        # For backward compatibility with tests, also set game_running to False
-        # But this will be overridden when transitioning from game over back to menu
-        self.game_running = False
-        
         # Update high scores
         is_new_high_score = self.high_score_manager.update_score(self.score)
         self.high_score_manager.update_last_game_score(self.score)
@@ -213,16 +209,10 @@ class SnakeGame:
         title_rect = title_text.get_rect(center=(self.window_width // 2, self.window_height // 4))
         self.window.blit(title_text, title_rect)
         
-        # Draw subtitle
+        # Draw subtitle (instructions) - moved to center area
         subtitle_text = self.font_small.render("Use Arrow Keys/WASD to move, Q/ESC to quit", True, COLOR_SUBTITLE)
-        subtitle_rect = subtitle_text.get_rect(center=(self.window_width // 2, self.window_height // 4 + 80))
+        subtitle_rect = subtitle_text.get_rect(center=(self.window_width // 2, self.window_height // 2 - 60))
         self.window.blit(subtitle_text, subtitle_rect)
-        
-        # Draw high score
-        high_score = self.high_score_manager.get_high_score()
-        high_score_text = self.font_medium.render(f"Best Score: {high_score}", True, COLOR_TEXT)
-        high_score_rect = high_score_text.get_rect(center=(self.window_width // 2, self.window_height // 4 + 120))
-        self.window.blit(high_score_text, high_score_rect)
         
         # Draw play button with hover effect
         mouse_pos = pygame.mouse.get_pos()
@@ -235,6 +225,12 @@ class SnakeGame:
         button_text = self.font_medium.render("PLAY", True, COLOR_BUTTON_TEXT)
         button_text_rect = button_text.get_rect(center=self.play_button_rect.center)
         self.window.blit(button_text, button_text_rect)
+        
+        # Draw high score - moved to bottom area
+        high_score = self.high_score_manager.get_high_score()
+        high_score_text = self.font_medium.render(f"Best Score: {high_score}", True, COLOR_TEXT)
+        high_score_rect = high_score_text.get_rect(center=(self.window_width // 2, self.window_height - 80))
+        self.window.blit(high_score_text, high_score_rect)
         
         # Draw instructions
         instruction_text = self.font_small.render("Click PLAY or press ENTER to start", True, COLOR_SUBTITLE)
