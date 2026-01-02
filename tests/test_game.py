@@ -362,7 +362,113 @@ class TestSnakeGame:
         """Test is_game_over method"""
         from src.game import SnakeGame
         game = SnakeGame()
-        
+
         assert game.is_game_over() is False
         game.game_over = True
         assert game.is_game_over() is True
+
+
+class TestWindowResizing:
+    """Tests for window resizing functionality"""
+
+    def test_window_is_resizable(self):
+        """Test that window is initialized with RESIZABLE flag"""
+        import os
+        os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+        from src.game import SnakeGame
+        game = SnakeGame()
+
+        # Check that window exists and has correct initial size
+        assert game.window_width > 0
+        assert game.window_height > 0
+        assert game.window is not None
+
+    def test_cell_size_calculation(self):
+        """Test dynamic cell size calculation"""
+        import os
+        os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+        from src.game import SnakeGame
+        game = SnakeGame()
+
+        # Test default size (400x400)
+        cell_width, cell_height = game._get_cell_size()
+        assert cell_width == 400 / BOARD_WIDTH
+        assert cell_height == 400 / BOARD_HEIGHT
+
+        # Resize and test new cell size
+        game._handle_window_resize(800, 600)
+        cell_width, cell_height = game._get_cell_size()
+        assert cell_width == 800 / BOARD_WIDTH
+        assert cell_height == 600 / BOARD_HEIGHT
+
+    def test_window_resize_handler(self):
+        """Test window resize handler with minimum size enforcement"""
+        import os
+        os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+        from src.game import SnakeGame
+        from src.config import MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT
+
+        game = SnakeGame()
+
+        # Test resize to larger dimensions
+        game._handle_window_resize(800, 600)
+        assert game.window_width == 800
+        assert game.window_height == 600
+
+        # Test resize to smaller but valid dimensions
+        game._handle_window_resize(300, 300)
+        assert game.window_width == 300
+        assert game.window_height == 300
+
+        # Test resize below minimum dimensions
+        game._handle_window_resize(100, 100)
+        assert game.window_width == MIN_WINDOW_WIDTH
+        assert game.window_height == MIN_WINDOW_HEIGHT
+
+    def test_button_positioning_on_resize(self):
+        """Test that buttons reposition correctly after window resize"""
+        import os
+        os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+        from src.game import SnakeGame
+
+        game = SnakeGame()
+
+        # Test button position at default size
+        button_rect = game._get_play_button_rect()
+        assert button_rect.centerx == game.window_width // 2
+        assert button_rect.centery == game.window_height // 2
+
+        # Resize window
+        game._handle_window_resize(800, 600)
+        game.play_button_rect = game._get_play_button_rect()
+
+        # Test button position after resize
+        button_rect = game._get_play_button_rect()
+        assert button_rect.centerx == game.window_width // 2
+        assert button_rect.centery == game.window_height // 2
+
+    def test_game_logic_unchanged_by_resize(self):
+        """Test that game logic is not affected by window resize"""
+        import os
+        os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+        from src.game import SnakeGame
+
+        game = SnakeGame()
+
+        # Get initial snake position
+        initial_head = game.snake.get_head_position()
+        initial_body_length = len(game.snake.get_body())
+
+        # Resize window
+        game._handle_window_resize(800, 600)
+
+        # Verify game logic unchanged
+        assert game.snake.get_head_position() == initial_head
+        assert len(game.snake.get_body()) == initial_body_length
+        assert game.board.width == BOARD_WIDTH
+        assert game.board.height == BOARD_HEIGHT
