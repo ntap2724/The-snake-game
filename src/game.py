@@ -5,7 +5,9 @@ import pygame
 from src.snake import Snake
 from src.food import Food
 from src.game_board import GameBoard
-from src.config import BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED, INITIAL_SNAKE_LENGTH
+from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED, INITIAL_SNAKE_LENGTH,
+                       GRID_SIZE, COLOR_SNAKE_HEAD, COLOR_SNAKE_BODY, COLOR_FOOD,
+                       COLOR_BACKGROUND, COLOR_BORDER)
 from src.utils import is_valid_direction
 
 class SnakeGame:
@@ -29,10 +31,19 @@ class SnakeGame:
         self.score = 0
         self.game_over = False
         self.game_running = True
+        
+        # Initialize pygame display
+        pygame.init()
+        self.window_width = BOARD_WIDTH * GRID_SIZE
+        self.window_height = BOARD_HEIGHT * GRID_SIZE
+        self.window = pygame.display.set_mode((self.window_width, self.window_height))
+        pygame.display.set_caption("Snake Game")
+        self.font = pygame.font.Font(None, 36)
+        self.game_over_font = pygame.font.Font(None, 72)
     
     def run(self):
         """Main game loop - continuously update, render, and handle input
-        
+
         Structure:
             - Loop while game is running
             - Handle user input
@@ -40,24 +51,31 @@ class SnakeGame:
             - Render the game
             - Control game speed with sleep
         """
-        # Initialize pygame for input handling
-        pygame.init()
-        
         while self.game_running and not self.game_over:
             # Handle user input
             self.handle_input()
-            
+
             # Update game state
             self.update()
-            
+
             # Render the game
             self.render()
-            
+
             # Control game speed
             time.sleep(GAME_SPEED)
-        
-        # Game over - display final score
-        print(f"\nGame Over! Final Score: {self.score}")
+
+        # Game over - render final state
+        self.render_game_over()
+
+        # Wait for user to close window
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and
+                    (event.key == pygame.K_q or event.key == pygame.K_ESCAPE)):
+                    waiting = False
+
+        pygame.quit()
     
     def update(self):
         """Update game state each frame
@@ -86,7 +104,7 @@ class SnakeGame:
     
     def render(self):
         """Render the game to display
-        
+
         Display:
             - Clear screen
             - Draw board boundaries
@@ -94,37 +112,67 @@ class SnakeGame:
             - Draw food
             - Display score and game status
         """
-        # Clear the screen (using escape sequence for basic rendering)
-        print("\033[2J\033[H", end="")
-        
-        # Create empty board
-        board_2d = []
-        for y in range(BOARD_HEIGHT):
-            row = []
-            for x in range(BOARD_WIDTH):
-                row.append('.')
-            board_2d.append(row)
-        
-        # Add snake to board
+        # Fill background
+        self.window.fill(COLOR_BACKGROUND)
+
+        # Draw border
+        pygame.draw.rect(self.window, COLOR_BORDER, (0, 0, self.window_width, self.window_height), 2)
+
+        # Draw food as red circle
+        food_x, food_y = self.food.get_position()
+        food_rect = (food_x * GRID_SIZE, food_y * GRID_SIZE, GRID_SIZE, GRID_SIZE)
+        pygame.draw.circle(self.window, COLOR_FOOD,
+                          (food_x * GRID_SIZE + GRID_SIZE // 2, food_y * GRID_SIZE + GRID_SIZE // 2),
+                          GRID_SIZE // 2 - 2)
+
+        # Draw snake body (lighter green)
         snake_body = self.snake.get_body()
         for i, segment in enumerate(snake_body):
             x, y = segment
             if i == 0:
-                board_2d[y][x] = 'O'  # Head
+                # Head (bright green)
+                pygame.draw.circle(self.window, COLOR_SNAKE_HEAD,
+                                  (x * GRID_SIZE + GRID_SIZE // 2, y * GRID_SIZE + GRID_SIZE // 2),
+                                  GRID_SIZE // 2 - 2)
             else:
-                board_2d[y][x] = 'o'  # Body
-        
-        # Add food to board
-        food_x, food_y = self.food.get_position()
-        board_2d[food_y][food_x] = '*'
-        
-        # Print board
-        print(f"Score: {self.score}")
-        print("+" + "-" * (BOARD_WIDTH) + "+")
-        for row in board_2d:
-            print("|" + "".join(row) + "|")
-        print("+" + "-" * (BOARD_WIDTH) + "+")
-    
+                # Body (lighter green)
+                pygame.draw.circle(self.window, COLOR_SNAKE_BODY,
+                                  (x * GRID_SIZE + GRID_SIZE // 2, y * GRID_SIZE + GRID_SIZE // 2),
+                                  GRID_SIZE // 2 - 2)
+
+        # Draw score at top
+        score_text = self.font.render(f"Score: {self.score}", True, COLOR_BORDER)
+        self.window.blit(score_text, (10, 10))
+
+        # Update display
+        pygame.display.flip()
+
+    def render_game_over(self):
+        """Render game over screen with final score"""
+        # Fill background
+        self.window.fill(COLOR_BACKGROUND)
+
+        # Draw border
+        pygame.draw.rect(self.window, COLOR_BORDER, (0, 0, self.window_width, self.window_height), 2)
+
+        # Render "Game Over" text
+        game_over_text = self.game_over_font.render("Game Over!", True, COLOR_SNAKE_HEAD)
+        game_over_rect = game_over_text.get_rect(center=(self.window_width // 2, self.window_height // 2 - 50))
+        self.window.blit(game_over_text, game_over_rect)
+
+        # Render final score
+        score_text = self.font.render(f"Final Score: {self.score}", True, COLOR_BORDER)
+        score_rect = score_text.get_rect(center=(self.window_width // 2, self.window_height // 2 + 20))
+        self.window.blit(score_text, score_rect)
+
+        # Render quit instruction
+        quit_text = self.font.render("Press Q or ESC to quit", True, COLOR_BORDER)
+        quit_rect = quit_text.get_rect(center=(self.window_width // 2, self.window_height // 2 + 60))
+        self.window.blit(quit_text, quit_rect)
+
+        # Update display
+        pygame.display.flip()
+
     def handle_input(self):
         """Handle user keyboard input
         

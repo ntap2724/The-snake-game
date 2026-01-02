@@ -11,12 +11,12 @@ class Snake:
             initial_position: Tuple (x, y) for head position
             length: Initial snake body length
         """
-        self.direction = 'DOWN'
+        self.direction = 'UP'
         self.body = []
         
-        # Body extends downward from initial position
+        # Body extends upward from initial position
         for i in range(length):
-            self.body.append((initial_position[0], initial_position[1] + i))
+            self.body.append((initial_position[0], initial_position[1] - i))
     
     def move(self, direction):
         """Move the snake in the given direction"""
