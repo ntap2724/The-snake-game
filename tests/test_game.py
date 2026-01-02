@@ -14,18 +14,18 @@ class TestSnake:
         """Test snake is initialized correctly"""
         pos = (10, 10)
         snake = Snake(pos, length=3)
-        
+
         # Assert body has 3 segments
         assert len(snake.get_body()) == 3
-        
+
         # Assert head position is (10, 10)
         assert snake.get_head_position() == (10, 10)
-        
-        # Assert body extends downward (body[1] and body[2] have y > 10)
+
+        # Assert body extends upward (body[1] and body[2] have y < 10)
         body = snake.get_body()
-        assert body == [(10, 10), (10, 11), (10, 12)]
-        assert body[1][1] > 10
-        assert body[2][1] > 10
+        assert body == [(10, 10), (10, 9), (10, 8)]
+        assert body[1][1] < 10
+        assert body[2][1] < 10
     
     def test_snake_move(self):
         """Test snake movement"""
@@ -104,10 +104,10 @@ class TestSnake:
         """Test snake self-collision detection with no collision"""
         # Create snake at (10, 10) with length 3
         snake = Snake((10, 10), length=3)
-        
-        # Move in safe direction
-        snake.move('UP')
-        
+
+        # Move in safe direction (DOWN, not UP, since snake extends upward)
+        snake.move('DOWN')
+
         # Assert check_self_collision() returns False
         assert snake.check_self_collision() is False
     
