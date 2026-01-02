@@ -9,9 +9,16 @@ A simple but complete Snake game where players control a snake to eat food and g
 
 1. Clone the repository
 2. Create a virtual environment:
+   **Windows (PowerShell or CMD):**
    ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   venv\Scripts\activate
+   ```
+   
+   **Mac/Linux (Bash/Zsh):**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
    ```
 
 3. Install dependencies:
@@ -74,8 +81,10 @@ pytest tests/
 ## Requirements
 
 - Python 3.10+
-- Pygame 2.5.2 (for rendering)
+- Pygame 2.5.3+ (for rendering)
 - Pytest 7.4.3 (for testing)
+- setuptools
+- wheel
 
 ## Future Enhancements
 

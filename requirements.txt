@@ -1,2 +1,4 @@
-pygame==2.5.2
+setuptools
+wheel
+pygame>=2.5.3
 pytest==7.4.3
