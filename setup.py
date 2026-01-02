@@ -8,7 +8,9 @@ setup(
     packages=find_packages(),
     python_requires=">=3.10",
     install_requires=[
-        "pygame>=2.5.2",
+        "pygame>=2.5.3",
+        "setuptools",
+        "wheel",
     ],
     entry_points={
         "console_scripts": [
