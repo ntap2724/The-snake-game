@@ -8,6 +8,7 @@ INITIAL_SNAKE_LENGTH = 3
 # Game States
 STATE_MENU = "menu"
 STATE_PLAYING = "playing"
+STATE_PAUSED = "paused"
 STATE_GAME_OVER = "game_over"
 
 # Colors (for pygame)
