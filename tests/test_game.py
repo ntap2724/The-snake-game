@@ -340,7 +340,8 @@ class TestSnakeGame:
         game.update()
         
         assert game.game_over is True
-        assert game.game_running is False
+        # Game should continue running to show game over screen
+        assert game.game_running is True
     
     def test_self_collision(self):
         """Test self collision ends game"""
@@ -354,7 +355,8 @@ class TestSnakeGame:
         game.update()
         
         assert game.game_over is True
-        assert game.game_running is False
+        # Game should continue running to show game over screen
+        assert game.game_running is True
     
     def test_is_game_over(self):
         """Test is_game_over method"""
