@@ -82,6 +82,7 @@ class SnakeGame:
         # Check for collisions
         if self.check_collisions():
             self.game_over = True
+            self.game_running = False
     
     def render(self):
         """Render the game to display
