@@ -7,11 +7,12 @@ from src.food import Food
 from src.game_board import GameBoard
 from src.high_score import HighScoreManager
 from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED, INITIAL_SNAKE_LENGTH,
-                       GRID_SIZE, COLOR_SNAKE_HEAD, COLOR_SNAKE_BODY, COLOR_FOOD,
-                       COLOR_BACKGROUND, COLOR_BORDER, COLOR_TEXT, COLOR_BUTTON,
-                       COLOR_BUTTON_HOVER, COLOR_BUTTON_TEXT, COLOR_TITLE, COLOR_SUBTITLE,
-                       COLOR_HIGHLIGHT, STATE_MENU, STATE_PLAYING, STATE_GAME_OVER,
-                       BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_MARGIN)
+                        GRID_SIZE, COLOR_SNAKE_HEAD, COLOR_SNAKE_BODY, COLOR_FOOD,
+                        COLOR_BACKGROUND, COLOR_BORDER, COLOR_TEXT, COLOR_BUTTON,
+                        COLOR_BUTTON_HOVER, COLOR_BUTTON_TEXT, COLOR_TITLE, COLOR_SUBTITLE,
+                        COLOR_HIGHLIGHT, STATE_MENU, STATE_PLAYING, STATE_GAME_OVER,
+                        BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_MARGIN, MIN_WINDOW_WIDTH,
+                        MIN_WINDOW_HEIGHT)
 from src.utils import is_valid_direction
 
 class SnakeGame:
@@ -21,38 +22,58 @@ class SnakeGame:
         """Initialize the game with all components and initial state"""
         # Initialize game board
         self.board = GameBoard(BOARD_WIDTH, BOARD_HEIGHT)
-        
+
         # Initialize high score manager
         self.high_score_manager = HighScoreManager()
-        
-        # Initialize pygame display
+
+        # Initialize pygame display with resizable flag
         pygame.init()
         self.window_width = BOARD_WIDTH * GRID_SIZE
         self.window_height = BOARD_HEIGHT * GRID_SIZE
-        self.window = pygame.display.set_mode((self.window_width, self.window_height))
+        self.window = pygame.display.set_mode((self.window_width, self.window_height), pygame.RESIZABLE)
         pygame.display.set_caption("Snake Game")
-        
+
         # Initialize fonts
         self.font_small = pygame.font.Font(None, 24)
         self.font_medium = pygame.font.Font(None, 36)
         self.font_large = pygame.font.Font(None, 72)
         self.font_title = pygame.font.Font(None, 96)
-        
+
         # Initialize game state - start in menu for new behavior
         self.current_state = STATE_MENU
         self.play_button_rect = self._get_play_button_rect()
-        
+
         # Initialize game objects (for backward compatibility with tests)
         self._initialize_game_objects()
-        
+
         # Game state variables
         self.score = 0
         self.game_over = False
         self.game_running = True
-        
+
         # Collision grace period to prevent immediate collision detection
         self.collision_grace_period = 3  # Allow 3 frames before collision detection
-    
+
+    def _get_cell_size(self):
+        """Calculate cell size dynamically based on current window dimensions"""
+        cell_width = self.window_width / BOARD_WIDTH
+        cell_height = self.window_height / BOARD_HEIGHT
+        return cell_width, cell_height
+
+    def _handle_window_resize(self, width, height):
+        """Handle window resize event
+
+        Args:
+            width: New window width
+            height: New window height
+        """
+        # Enforce minimum window size
+        self.window_width = max(width, MIN_WINDOW_WIDTH)
+        self.window_height = max(height, MIN_WINDOW_HEIGHT)
+
+        # Update the display surface
+        self.window = pygame.display.set_mode((self.window_width, self.window_height), pygame.RESIZABLE)
+
     def _get_play_button_rect(self):
         """Get the rectangle for the play button"""
         center_x = self.window_width // 2
@@ -239,11 +260,14 @@ class SnakeGame:
     
     def _render_game(self):
         """Render the active game screen"""
+        # Get dynamic cell size
+        cell_width, cell_height = self._get_cell_size()
+
         # Draw food as red circle
         food_x, food_y = self.food.get_position()
         pygame.draw.circle(self.window, COLOR_FOOD,
-                          (food_x * GRID_SIZE + GRID_SIZE // 2, food_y * GRID_SIZE + GRID_SIZE // 2),
-                          GRID_SIZE // 2 - 2)
+                          (food_x * cell_width + cell_width / 2, food_y * cell_height + cell_height / 2),
+                          min(cell_width, cell_height) / 2 - 2)
 
         # Draw snake body (lighter green)
         snake_body = self.snake.get_body()
@@ -252,13 +276,13 @@ class SnakeGame:
             if i == 0:
                 # Head (bright green)
                 pygame.draw.circle(self.window, COLOR_SNAKE_HEAD,
-                                  (x * GRID_SIZE + GRID_SIZE // 2, y * GRID_SIZE + GRID_SIZE // 2),
-                                  GRID_SIZE // 2 - 2)
+                                  (x * cell_width + cell_width / 2, y * cell_height + cell_height / 2),
+                                  min(cell_width, cell_height) / 2 - 2)
             else:
                 # Body (lighter green)
                 pygame.draw.circle(self.window, COLOR_SNAKE_BODY,
-                                  (x * GRID_SIZE + GRID_SIZE // 2, y * GRID_SIZE + GRID_SIZE // 2),
-                                  GRID_SIZE // 2 - 2)
+                                  (x * cell_width + cell_width / 2, y * cell_height + cell_height / 2),
+                                  min(cell_width, cell_height) / 2 - 2)
 
         # Draw score at top
         score_text = self.font_medium.render(f"Score: {self.score}", True, COLOR_BORDER)
@@ -344,7 +368,12 @@ class SnakeGame:
             if event.type == pygame.QUIT:
                 self.game_running = False
                 return
-            
+
+            if event.type == pygame.VIDEORESIZE:
+                self._handle_window_resize(event.w, event.h)
+                # Update button positions after resize
+                self.play_button_rect = self._get_play_button_rect()
+
             if event.type == pygame.KEYDOWN:
                 self._handle_keyboard_input(event)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
