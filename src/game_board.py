@@ -12,10 +12,9 @@ class GameBoard:
     
     def is_within_bounds(self, position):
         """Check if a position is within board boundaries"""
-        # TODO: Implement bounds checking
-        pass
+        x, y = position
+        return 0 <= x < self.width and 0 <= y < self.height
     
     def check_wall_collision(self, position):
         """Check if a position collides with board walls"""
-        # TODO: Implement wall collision detection
-        pass
+        return not self.is_within_bounds(position)
