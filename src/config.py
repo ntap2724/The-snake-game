@@ -2,7 +2,9 @@
 BOARD_WIDTH = 20
 BOARD_HEIGHT = 20
 GRID_SIZE = 20
-GAME_SPEED = 0.1  # seconds per move (10 moves per second)
+GAME_SPEED_INITIAL = 0.1  # seconds per move (10 moves per second)
+GAME_SPEED_MIN = 0.04  # fastest allowed speed (25 moves per second)
+GAME_SPEED_STEP = 0.005  # speed increase per food eaten
 INITIAL_SNAKE_LENGTH = 3
 
 # Game States

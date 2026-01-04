@@ -6,7 +6,8 @@ from src.snake import Snake
 from src.food import Food
 from src.game_board import GameBoard
 from src.high_score import HighScoreManager
-from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED, INITIAL_SNAKE_LENGTH,
+from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED_INITIAL, GAME_SPEED_MIN,
+                        GAME_SPEED_STEP, INITIAL_SNAKE_LENGTH,
                         GRID_SIZE, COLOR_SNAKE_HEAD, COLOR_SNAKE_BODY, COLOR_FOOD,
                         COLOR_BACKGROUND, COLOR_BORDER, COLOR_TEXT, COLOR_BUTTON,
                         COLOR_BUTTON_HOVER, COLOR_BUTTON_TEXT, COLOR_TITLE, COLOR_SUBTITLE,
@@ -51,6 +52,7 @@ class SnakeGame:
         self.game_over = False
         self.game_running = True
         self.is_new_high_score = False
+        self.game_speed = GAME_SPEED_INITIAL
 
         # Collision grace period to prevent immediate collision detection
         self.collision_grace_period = 3  # Allow 3 frames before collision detection
@@ -104,6 +106,7 @@ class SnakeGame:
         self.score = 0
         self.game_over = False
         self.is_new_high_score = False
+        self.game_speed = GAME_SPEED_INITIAL
         
         # Reset collision grace period for new game
         self.collision_grace_period = 3
@@ -131,7 +134,7 @@ class SnakeGame:
 
             # Control game speed (only if playing)
             if self.current_state == STATE_PLAYING:
-                time.sleep(GAME_SPEED)
+                time.sleep(self.game_speed)
             else:
                 # Small delay for menu and game over screens to reduce CPU usage
                 time.sleep(0.016)  # ~60 FPS for UI screens
@@ -158,9 +161,14 @@ class SnakeGame:
             # Snake ate food - grow and increase score
             self.snake.grow()
             self.score += 1
+            self.game_speed = max(GAME_SPEED_MIN, self.game_speed - GAME_SPEED_STEP)
             # Respawn food at new position (excluding snake body)
             self.food.spawn(exclude_positions=self.snake.get_body())
-        
+
+        head_position = self.snake.get_head_position()
+        if not self.board.is_within_bounds(head_position):
+            self.snake.body[0] = self.board.wrap_position(head_position)
+
         # Check for collisions using the proper logic
         if self._check_collisions(previous_body):
             self._end_game()
@@ -180,11 +188,6 @@ class SnakeGame:
         
         Note: Food collision is handled separately in update() as it doesn't end the game
         """
-        # Check wall collision
-        head_pos = self.snake.get_head_position()
-        if self.board.check_wall_collision(head_pos):
-            return True
-        
         # Check self collision using the previous body state
         # Fix: Check if head position is in the body segments that were NOT the head
         # This prevents false collision when snake moves into the space vacated by its tail

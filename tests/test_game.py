@@ -340,7 +340,7 @@ class TestSnakeGame:
         assert len(game.snake.get_body()) == initial_length + 1
     
     def test_wall_collision(self):
-        """Test wall collision ends game"""
+        """Test wall collision wraps instead of ending the game"""
         from src.game import SnakeGame
         game = SnakeGame()
         
@@ -350,9 +350,8 @@ class TestSnakeGame:
         
         game.update()
         
-        assert game.game_over is True
-        # Game should continue running to show game over screen
-        assert game.game_running is True
+        assert game.game_over is False
+        assert game.snake.get_head_position() == (BOARD_WIDTH - 1, 0)
     
     def test_self_collision(self):
         """Test self collision ends game"""
