@@ -6,12 +6,15 @@ from src.snake import Snake
 from src.food import Food
 from src.game_board import GameBoard
 from src.high_score import HighScoreManager
-from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED, INITIAL_SNAKE_LENGTH,
+from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED_INITIAL, GAME_SPEED_MIN,
+                        GAME_SPEED_STEP, INITIAL_SNAKE_LENGTH,
                         GRID_SIZE, COLOR_SNAKE_HEAD, COLOR_SNAKE_BODY, COLOR_FOOD,
                         COLOR_BACKGROUND, COLOR_BORDER, COLOR_TEXT, COLOR_BUTTON,
                         COLOR_BUTTON_HOVER, COLOR_BUTTON_TEXT, COLOR_TITLE, COLOR_SUBTITLE,
                         COLOR_HIGHLIGHT, STATE_MENU, STATE_PLAYING, STATE_GAME_OVER,
-                        BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_MARGIN, MIN_WINDOW_WIDTH,
+                        STATE_PAUSED,
+                        BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_MARGIN, PANEL_WIDTH,
+                        DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, MIN_WINDOW_WIDTH,
                         MIN_WINDOW_HEIGHT)
 from src.utils import is_valid_direction
 
@@ -28,8 +31,8 @@ class SnakeGame:
 
         # Initialize pygame display with resizable flag
         pygame.init()
-        self.window_width = BOARD_WIDTH * GRID_SIZE
-        self.window_height = BOARD_HEIGHT * GRID_SIZE
+        self.window_width = DEFAULT_WINDOW_WIDTH
+        self.window_height = DEFAULT_WINDOW_HEIGHT
         self.window = pygame.display.set_mode((self.window_width, self.window_height), pygame.RESIZABLE)
         pygame.display.set_caption("Snake Game")
 
@@ -51,14 +54,28 @@ class SnakeGame:
         self.game_over = False
         self.game_running = True
         self.is_new_high_score = False
+        self.game_speed = GAME_SPEED_INITIAL
 
         # Collision grace period to prevent immediate collision detection
         self.collision_grace_period = 3  # Allow 3 frames before collision detection
 
+    def _get_layout(self):
+        """Calculate layout rectangles for game and UI panels"""
+        available_width = max(0, self.window_width - PANEL_WIDTH)
+        game_size = min(available_width, self.window_height)
+        game_size = max(0, game_size)
+
+        game_rect = pygame.Rect(0, 0, game_size, game_size)
+        game_rect.y = (self.window_height - game_rect.height) // 2
+
+        ui_rect = pygame.Rect(game_rect.width, 0, self.window_width - game_rect.width, self.window_height)
+        return game_rect, ui_rect
+
     def _get_cell_size(self):
-        """Calculate cell size dynamically based on current window dimensions"""
-        cell_width = self.window_width / BOARD_WIDTH
-        cell_height = self.window_height / BOARD_HEIGHT
+        """Calculate cell size dynamically based on current game area dimensions"""
+        game_rect, _ = self._get_layout()
+        cell_width = game_rect.width / BOARD_WIDTH if BOARD_WIDTH else 0
+        cell_height = game_rect.height / BOARD_HEIGHT if BOARD_HEIGHT else 0
         return cell_width, cell_height
 
     def _handle_window_resize(self, width, height):
@@ -104,6 +121,7 @@ class SnakeGame:
         self.score = 0
         self.game_over = False
         self.is_new_high_score = False
+        self.game_speed = GAME_SPEED_INITIAL
         
         # Reset collision grace period for new game
         self.collision_grace_period = 3
@@ -131,7 +149,7 @@ class SnakeGame:
 
             # Control game speed (only if playing)
             if self.current_state == STATE_PLAYING:
-                time.sleep(GAME_SPEED)
+                time.sleep(self.game_speed)
             else:
                 # Small delay for menu and game over screens to reduce CPU usage
                 time.sleep(0.016)  # ~60 FPS for UI screens
@@ -158,9 +176,14 @@ class SnakeGame:
             # Snake ate food - grow and increase score
             self.snake.grow()
             self.score += 1
+            self.game_speed = max(GAME_SPEED_MIN, self.game_speed - GAME_SPEED_STEP)
             # Respawn food at new position (excluding snake body)
             self.food.spawn(exclude_positions=self.snake.get_body())
-        
+
+        head_position = self.snake.get_head_position()
+        if not self.board.is_within_bounds(head_position):
+            self.snake.body[0] = self.board.wrap_position(head_position)
+
         # Check for collisions using the proper logic
         if self._check_collisions(previous_body):
             self._end_game()
@@ -180,11 +203,6 @@ class SnakeGame:
         
         Note: Food collision is handled separately in update() as it doesn't end the game
         """
-        # Check wall collision
-        head_pos = self.snake.get_head_position()
-        if self.board.check_wall_collision(head_pos):
-            return True
-        
         # Check self collision using the previous body state
         # Fix: Check if head position is in the body segments that were NOT the head
         # This prevents false collision when snake moves into the space vacated by its tail
@@ -211,14 +229,18 @@ class SnakeGame:
         # Clear screen
         self.window.fill(COLOR_BACKGROUND)
 
-        # Draw border
-        pygame.draw.rect(self.window, COLOR_BORDER, (0, 0, self.window_width, self.window_height), 2)
+        # Draw layout borders
+        game_rect, ui_rect = self._get_layout()
+        pygame.draw.rect(self.window, COLOR_BORDER, game_rect, 2)
+        pygame.draw.rect(self.window, COLOR_BORDER, ui_rect, 2)
 
         # Render based on current state
         if self.current_state == STATE_MENU:
             self._render_menu()
         elif self.current_state == STATE_PLAYING:
             self._render_game()
+        elif self.current_state == STATE_PAUSED:
+            self._render_paused()
         elif self.current_state == STATE_GAME_OVER:
             self._render_game_over()
 
@@ -233,7 +255,11 @@ class SnakeGame:
         self.window.blit(title_text, title_rect)
         
         # Draw subtitle (instructions) - moved to center area
-        subtitle_text = self.font_small.render("Use Arrow Keys/WASD to move, Q/ESC to quit", True, COLOR_SUBTITLE)
+        subtitle_text = self.font_small.render(
+            "Use Arrow Keys/WASD to move, P to pause, Q/ESC to quit",
+            True,
+            COLOR_SUBTITLE
+        )
         subtitle_rect = subtitle_text.get_rect(center=(self.window_width // 2, self.window_height // 2 - 60))
         self.window.blit(subtitle_text, subtitle_rect)
         
@@ -256,19 +282,26 @@ class SnakeGame:
         self.window.blit(high_score_text, high_score_rect)
         
         # Draw instructions
-        instruction_text = self.font_small.render("Click PLAY or press ENTER to start", True, COLOR_SUBTITLE)
+        instruction_text = self.font_small.render(
+            "Click PLAY or press ENTER to start",
+            True,
+            COLOR_SUBTITLE
+        )
         instruction_rect = instruction_text.get_rect(center=(self.window_width // 2, self.window_height // 2 + BUTTON_HEIGHT + 30))
         self.window.blit(instruction_text, instruction_rect)
     
     def _render_game(self):
         """Render the active game screen"""
+        game_rect, ui_rect = self._get_layout()
+
         # Get dynamic cell size
         cell_width, cell_height = self._get_cell_size()
 
         # Draw food as red circle
         food_x, food_y = self.food.get_position()
         pygame.draw.circle(self.window, COLOR_FOOD,
-                          (food_x * cell_width + cell_width / 2, food_y * cell_height + cell_height / 2),
+                          (game_rect.x + food_x * cell_width + cell_width / 2,
+                           game_rect.y + food_y * cell_height + cell_height / 2),
                           min(cell_width, cell_height) / 2 - 2)
 
         # Draw snake body (lighter green)
@@ -278,17 +311,59 @@ class SnakeGame:
             if i == 0:
                 # Head (bright green)
                 pygame.draw.circle(self.window, COLOR_SNAKE_HEAD,
-                                  (x * cell_width + cell_width / 2, y * cell_height + cell_height / 2),
+                                  (game_rect.x + x * cell_width + cell_width / 2,
+                                   game_rect.y + y * cell_height + cell_height / 2),
                                   min(cell_width, cell_height) / 2 - 2)
             else:
                 # Body (lighter green)
                 pygame.draw.circle(self.window, COLOR_SNAKE_BODY,
-                                  (x * cell_width + cell_width / 2, y * cell_height + cell_height / 2),
+                                  (game_rect.x + x * cell_width + cell_width / 2,
+                                   game_rect.y + y * cell_height + cell_height / 2),
                                   min(cell_width, cell_height) / 2 - 2)
 
-        # Draw score at top
-        score_text = self.font_medium.render(f"Score: {self.score}", True, COLOR_BORDER)
-        self.window.blit(score_text, (10, 10))
+        self._render_ui_panel(ui_rect)
+
+    def _render_ui_panel(self, ui_rect):
+        """Render score and controls inside the UI panel"""
+        score_text = self.font_medium.render(f"Score: {self.score}", True, COLOR_TEXT)
+        score_rect = score_text.get_rect(topleft=(ui_rect.x + 20, ui_rect.y + 20))
+        self.window.blit(score_text, score_rect)
+
+        high_score = self.high_score_manager.get_high_score()
+        high_score_text = self.font_small.render(f"Best: {high_score}", True, COLOR_TEXT)
+        high_score_rect = high_score_text.get_rect(topleft=(ui_rect.x + 20, ui_rect.y + 60))
+        self.window.blit(high_score_text, high_score_rect)
+
+        speed_text = self.font_small.render(f"Speed: {self.game_speed:.3f}s", True, COLOR_TEXT)
+        speed_rect = speed_text.get_rect(topleft=(ui_rect.x + 20, ui_rect.y + 85))
+        self.window.blit(speed_text, speed_rect)
+
+        button_y = ui_rect.y + 140
+        button_width = max(0, ui_rect.width - 40)
+
+        pause_label = "RESUME" if self.current_state == STATE_PAUSED else "PAUSE"
+        pause_rect = pygame.Rect(ui_rect.x + 20, button_y, button_width, BUTTON_HEIGHT)
+        restart_rect = pygame.Rect(ui_rect.x + 20, button_y + BUTTON_HEIGHT + 16, button_width, BUTTON_HEIGHT)
+        menu_rect = pygame.Rect(ui_rect.x + 20, button_y + 2 * (BUTTON_HEIGHT + 16), button_width, BUTTON_HEIGHT)
+
+        mouse_pos = pygame.mouse.get_pos()
+        for rect, label in [
+            (pause_rect, pause_label),
+            (restart_rect, "RESTART"),
+            (menu_rect, "MENU"),
+        ]:
+            color = COLOR_BUTTON_HOVER if rect.collidepoint(mouse_pos) else COLOR_BUTTON
+            pygame.draw.rect(self.window, color, rect)
+            pygame.draw.rect(self.window, COLOR_BORDER, rect, 2)
+            text = self.font_medium.render(label, True, COLOR_BUTTON_TEXT)
+            text_rect = text.get_rect(center=rect.center)
+            self.window.blit(text, text_rect)
+
+        self._current_button_rects = {
+            'pause': pause_rect,
+            'restart': restart_rect,
+            'menu': menu_rect
+        }
     
     def _render_game_over(self):
         """Render game over screen with final score and high score"""
@@ -354,12 +429,25 @@ class SnakeGame:
         self.window.blit(menu_text, menu_text_rect)
 
         # Render instructions
-        instruction_text = self.font_small.render("SPACE=Play Again, M=Menu, Q/ESC=Quit", True, COLOR_SUBTITLE)
+        instruction_text = self.font_small.render(
+            "SPACE=Play Again, M=Menu, Q/ESC=Quit",
+            True,
+            COLOR_SUBTITLE
+        )
         instruction_rect = instruction_text.get_rect(center=(self.window_width // 2, button_y + BUTTON_HEIGHT + 40))
         self.window.blit(instruction_text, instruction_rect)
         
         # Store button rects for click detection
         self._current_button_rects = {'play_again': play_again_rect, 'menu': menu_rect}
+
+    def _render_paused(self):
+        """Render paused state overlay"""
+        self._render_game()
+
+        overlay_text = self.font_large.render("PAUSED", True, COLOR_HIGHLIGHT)
+        game_rect, _ = self._get_layout()
+        overlay_rect = overlay_text.get_rect(center=game_rect.center)
+        self.window.blit(overlay_text, overlay_rect)
     
     def handle_input(self):
         """Handle user keyboard input and mouse clicks based on current state"""
@@ -405,6 +493,12 @@ class SnakeGame:
             elif event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
                 self.game_running = False
                 return
+            elif event.key == pygame.K_p:
+                self.current_state = STATE_PAUSED
+                return
+            elif event.key == pygame.K_r:
+                self._start_game()
+                return
             
             # Update direction if new direction is valid
             if new_dir is not None and is_valid_direction(current_dir, new_dir):
@@ -417,6 +511,13 @@ class SnakeGame:
                 self._go_to_menu()
             elif event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
                 self.game_running = False
+        elif self.current_state == STATE_PAUSED:
+            if event.key == pygame.K_p or event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                self.current_state = STATE_PLAYING
+            elif event.key == pygame.K_r:
+                self._start_game()
+            elif event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
+                self.game_running = False
     
     def _handle_mouse_click(self, pos):
         """Handle mouse clicks for button interaction"""
@@ -427,6 +528,14 @@ class SnakeGame:
         elif self.current_state == STATE_GAME_OVER:
             if hasattr(self, '_current_button_rects'):
                 if self._current_button_rects['play_again'].collidepoint(pos):
+                    self._start_game()
+                elif self._current_button_rects['menu'].collidepoint(pos):
+                    self._go_to_menu()
+        elif self.current_state in {STATE_PLAYING, STATE_PAUSED}:
+            if hasattr(self, '_current_button_rects'):
+                if self._current_button_rects['pause'].collidepoint(pos):
+                    self.current_state = STATE_PLAYING if self.current_state == STATE_PAUSED else STATE_PAUSED
+                elif self._current_button_rects['restart'].collidepoint(pos):
                     self._start_game()
                 elif self._current_button_rects['menu'].collidepoint(pos):
                     self._go_to_menu()
