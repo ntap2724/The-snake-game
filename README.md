@@ -3,7 +3,7 @@
 Trò chơi Rắn săn mồi (Snake) viết bằng Python, có menu, tạm dừng, theo dõi điểm cao và cửa sổ có thể thay đổi kích thước.
 
 ## Mô tả
-Điều khiển rắn ăn thức ăn để tăng chiều dài và điểm số. Trò chơi kết thúc khi rắn chạm vào tường hoặc chính mình. Tốc độ sẽ tăng dần theo số thức ăn đã ăn.
+Điều khiển rắn ăn thức ăn để tăng chiều dài và điểm số. Trò chơi kết thúc khi rắn chạm vào chính mình. Tốc độ sẽ tăng dần theo số thức ăn đã ăn.
 
 ## Tính năng chính
 
@@ -14,7 +14,7 @@ Trò chơi Rắn săn mồi (Snake) viết bằng Python, có menu, tạm dừng
 
 ## Cài đặt
 
-1. Clone repository
+1. Clone repo về máy
 2. Tạo môi trường ảo:
    **Windows (PowerShell hoặc CMD):**
    ```bash
