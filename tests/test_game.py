@@ -425,16 +425,18 @@ class TestWindowResizing:
         from src.game import SnakeGame
         game = SnakeGame()
 
-        # Test default size (400x400)
+        # Test default size (800x600)
         cell_width, cell_height = game._get_cell_size()
-        assert cell_width == 400 / BOARD_WIDTH
-        assert cell_height == 400 / BOARD_HEIGHT
+        game_rect, _ = game._get_layout()
+        assert cell_width == game_rect.width / BOARD_WIDTH
+        assert cell_height == game_rect.height / BOARD_HEIGHT
 
         # Resize and test new cell size
         game._handle_window_resize(800, 600)
         cell_width, cell_height = game._get_cell_size()
-        assert cell_width == 800 / BOARD_WIDTH
-        assert cell_height == 600 / BOARD_HEIGHT
+        game_rect, _ = game._get_layout()
+        assert cell_width == game_rect.width / BOARD_WIDTH
+        assert cell_height == game_rect.height / BOARD_HEIGHT
 
     def test_window_resize_handler(self):
         """Test window resize handler with minimum size enforcement"""
