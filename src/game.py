@@ -62,8 +62,13 @@ class SnakeGame:
         # Collision grace period to prevent immediate collision detection
         self.collision_grace_period = 3  # Allow 3 frames before collision detection
 
-    def _get_layout(self):
+    def _get_layout(self, include_panel=True):
         """Calculate layout rectangles for game and UI panels"""
+        if not include_panel:
+            game_rect = pygame.Rect(0, 0, self.window_width, self.window_height)
+            ui_rect = pygame.Rect(self.window_width, 0, 0, self.window_height)
+            return game_rect, ui_rect
+
         panel_width = int(self.window_width * PANEL_WIDTH_RATIO)
         panel_width = max(PANEL_WIDTH_MIN, min(PANEL_WIDTH_MAX, panel_width))
         available_width = max(0, self.window_width - panel_width)
@@ -235,18 +240,6 @@ class SnakeGame:
         # Clear screen
         self.window.fill(COLOR_BACKGROUND)
 
-        # Draw layout borders
-        game_rect, ui_rect = self._get_layout()
-        pygame.draw.rect(self.window, COLOR_PANEL_BG, ui_rect)
-        pygame.draw.rect(self.window, COLOR_BORDER, game_rect, 2)
-        pygame.draw.line(
-            self.window,
-            COLOR_PANEL_DIVIDER,
-            (ui_rect.x, 0),
-            (ui_rect.x, self.window_height),
-            1
-        )
-
         # Render based on current state
         if self.current_state == STATE_MENU:
             self._render_menu()
@@ -302,13 +295,22 @@ class SnakeGame:
             COLOR_SUBTITLE
         )
         instruction_rect = instruction_text.get_rect(
-            center=(game_rect.centerx, game_rect.centery + BUTTON_HEIGHT + 40)
+            center=(self.window_width // 2, self.window_height // 2 + BUTTON_HEIGHT + 30)
         )
         self.window.blit(instruction_text, instruction_rect)
     
     def _render_game(self):
         """Render the active game screen"""
         game_rect, ui_rect = self._get_layout()
+        pygame.draw.rect(self.window, COLOR_PANEL_BG, ui_rect)
+        pygame.draw.rect(self.window, COLOR_BORDER, game_rect, 2)
+        pygame.draw.line(
+            self.window,
+            COLOR_PANEL_DIVIDER,
+            (ui_rect.x, 0),
+            (ui_rect.x, self.window_height),
+            1
+        )
 
         # Get dynamic cell size
         cell_width, cell_height = self._get_cell_size()
