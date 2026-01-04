@@ -340,7 +340,7 @@ class TestSnakeGame:
         assert len(game.snake.get_body()) == initial_length + 1
     
     def test_wall_collision(self):
-        """Test wall collision ends game"""
+        """Test wall collision wraps instead of ending the game"""
         from src.game import SnakeGame
         game = SnakeGame()
         
@@ -350,9 +350,8 @@ class TestSnakeGame:
         
         game.update()
         
-        assert game.game_over is True
-        # Game should continue running to show game over screen
-        assert game.game_running is True
+        assert game.game_over is False
+        assert game.snake.get_head_position() == (BOARD_WIDTH - 1, 0)
     
     def test_self_collision(self):
         """Test self collision ends game"""
@@ -377,6 +376,29 @@ class TestSnakeGame:
         assert game.is_game_over() is False
         game.game_over = True
         assert game.is_game_over() is True
+
+    def test_pause_resume_and_restart(self):
+        """Test pause, resume, and restart behavior"""
+        import os
+        os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+        import pygame
+        from src.game import SnakeGame
+        from src.config import STATE_PLAYING, STATE_PAUSED
+
+        game = SnakeGame()
+        game.current_state = STATE_PLAYING
+
+        game._handle_keyboard_input(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_p))
+        assert game.current_state == STATE_PAUSED
+
+        game._handle_keyboard_input(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_p))
+        assert game.current_state == STATE_PLAYING
+
+        game.score = 5
+        game._handle_keyboard_input(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_r))
+        assert game.current_state == STATE_PLAYING
+        assert game.score == 0
 
 
 class TestWindowResizing:

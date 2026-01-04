@@ -6,11 +6,13 @@ from src.snake import Snake
 from src.food import Food
 from src.game_board import GameBoard
 from src.high_score import HighScoreManager
-from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED, INITIAL_SNAKE_LENGTH,
+from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED_INITIAL, GAME_SPEED_MIN,
+                        GAME_SPEED_STEP, INITIAL_SNAKE_LENGTH,
                         GRID_SIZE, COLOR_SNAKE_HEAD, COLOR_SNAKE_BODY, COLOR_FOOD,
                         COLOR_BACKGROUND, COLOR_BORDER, COLOR_TEXT, COLOR_BUTTON,
                         COLOR_BUTTON_HOVER, COLOR_BUTTON_TEXT, COLOR_TITLE, COLOR_SUBTITLE,
                         COLOR_HIGHLIGHT, STATE_MENU, STATE_PLAYING, STATE_GAME_OVER,
+                        STATE_PAUSED,
                         BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_MARGIN, MIN_WINDOW_WIDTH,
                         MIN_WINDOW_HEIGHT)
 from src.utils import is_valid_direction
@@ -51,6 +53,7 @@ class SnakeGame:
         self.game_over = False
         self.game_running = True
         self.is_new_high_score = False
+        self.game_speed = GAME_SPEED_INITIAL
 
         # Collision grace period to prevent immediate collision detection
         self.collision_grace_period = 3  # Allow 3 frames before collision detection
@@ -104,6 +107,7 @@ class SnakeGame:
         self.score = 0
         self.game_over = False
         self.is_new_high_score = False
+        self.game_speed = GAME_SPEED_INITIAL
         
         # Reset collision grace period for new game
         self.collision_grace_period = 3
@@ -131,7 +135,7 @@ class SnakeGame:
 
             # Control game speed (only if playing)
             if self.current_state == STATE_PLAYING:
-                time.sleep(GAME_SPEED)
+                time.sleep(self.game_speed)
             else:
                 # Small delay for menu and game over screens to reduce CPU usage
                 time.sleep(0.016)  # ~60 FPS for UI screens
@@ -158,9 +162,14 @@ class SnakeGame:
             # Snake ate food - grow and increase score
             self.snake.grow()
             self.score += 1
+            self.game_speed = max(GAME_SPEED_MIN, self.game_speed - GAME_SPEED_STEP)
             # Respawn food at new position (excluding snake body)
             self.food.spawn(exclude_positions=self.snake.get_body())
-        
+
+        head_position = self.snake.get_head_position()
+        if not self.board.is_within_bounds(head_position):
+            self.snake.body[0] = self.board.wrap_position(head_position)
+
         # Check for collisions using the proper logic
         if self._check_collisions(previous_body):
             self._end_game()
@@ -180,11 +189,6 @@ class SnakeGame:
         
         Note: Food collision is handled separately in update() as it doesn't end the game
         """
-        # Check wall collision
-        head_pos = self.snake.get_head_position()
-        if self.board.check_wall_collision(head_pos):
-            return True
-        
         # Check self collision using the previous body state
         # Fix: Check if head position is in the body segments that were NOT the head
         # This prevents false collision when snake moves into the space vacated by its tail
@@ -219,6 +223,8 @@ class SnakeGame:
             self._render_menu()
         elif self.current_state == STATE_PLAYING:
             self._render_game()
+        elif self.current_state == STATE_PAUSED:
+            self._render_paused()
         elif self.current_state == STATE_GAME_OVER:
             self._render_game_over()
 
@@ -233,7 +239,11 @@ class SnakeGame:
         self.window.blit(title_text, title_rect)
         
         # Draw subtitle (instructions) - moved to center area
-        subtitle_text = self.font_small.render("Use Arrow Keys/WASD to move, Q/ESC to quit", True, COLOR_SUBTITLE)
+        subtitle_text = self.font_small.render(
+            "Use Arrow Keys/WASD to move, P to pause, Q/ESC to quit",
+            True,
+            COLOR_SUBTITLE
+        )
         subtitle_rect = subtitle_text.get_rect(center=(self.window_width // 2, self.window_height // 2 - 60))
         self.window.blit(subtitle_text, subtitle_rect)
         
@@ -256,7 +266,11 @@ class SnakeGame:
         self.window.blit(high_score_text, high_score_rect)
         
         # Draw instructions
-        instruction_text = self.font_small.render("Click PLAY or press ENTER to start", True, COLOR_SUBTITLE)
+        instruction_text = self.font_small.render(
+            "Click PLAY or press ENTER to start",
+            True,
+            COLOR_SUBTITLE
+        )
         instruction_rect = instruction_text.get_rect(center=(self.window_width // 2, self.window_height // 2 + BUTTON_HEIGHT + 30))
         self.window.blit(instruction_text, instruction_rect)
     
@@ -354,12 +368,28 @@ class SnakeGame:
         self.window.blit(menu_text, menu_text_rect)
 
         # Render instructions
-        instruction_text = self.font_small.render("SPACE=Play Again, M=Menu, Q/ESC=Quit", True, COLOR_SUBTITLE)
+        instruction_text = self.font_small.render(
+            "SPACE=Play Again, M=Menu, Q/ESC=Quit",
+            True,
+            COLOR_SUBTITLE
+        )
         instruction_rect = instruction_text.get_rect(center=(self.window_width // 2, button_y + BUTTON_HEIGHT + 40))
         self.window.blit(instruction_text, instruction_rect)
         
         # Store button rects for click detection
         self._current_button_rects = {'play_again': play_again_rect, 'menu': menu_rect}
+
+    def _render_paused(self):
+        """Render paused state overlay"""
+        self._render_game()
+
+        overlay_text = self.font_large.render("PAUSED", True, COLOR_HIGHLIGHT)
+        overlay_rect = overlay_text.get_rect(center=(self.window_width // 2, self.window_height // 2 - 40))
+        self.window.blit(overlay_text, overlay_rect)
+
+        instruction_text = self.font_small.render("P/ENTER=Resume, R=Restart, Q/ESC=Quit", True, COLOR_SUBTITLE)
+        instruction_rect = instruction_text.get_rect(center=(self.window_width // 2, self.window_height // 2 + 40))
+        self.window.blit(instruction_text, instruction_rect)
     
     def handle_input(self):
         """Handle user keyboard input and mouse clicks based on current state"""
@@ -405,6 +435,12 @@ class SnakeGame:
             elif event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
                 self.game_running = False
                 return
+            elif event.key == pygame.K_p:
+                self.current_state = STATE_PAUSED
+                return
+            elif event.key == pygame.K_r:
+                self._start_game()
+                return
             
             # Update direction if new direction is valid
             if new_dir is not None and is_valid_direction(current_dir, new_dir):
@@ -415,6 +451,13 @@ class SnakeGame:
                 self._start_game()
             elif event.key == pygame.K_m:
                 self._go_to_menu()
+            elif event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
+                self.game_running = False
+        elif self.current_state == STATE_PAUSED:
+            if event.key == pygame.K_p or event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                self.current_state = STATE_PLAYING
+            elif event.key == pygame.K_r:
+                self._start_game()
             elif event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
                 self.game_running = False
     
