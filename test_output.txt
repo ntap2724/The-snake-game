@@ -1,0 +1,41 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-7.4.3, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/engine/project
+collecting ... collected 27 items
+
+tests/test_game.py::TestSnake::test_snake_initialization PASSED          [  3%]
+tests/test_game.py::TestSnake::test_snake_move PASSED                    [  7%]
+tests/test_game.py::TestSnake::test_snake_move_all_directions PASSED     [ 11%]
+tests/test_game.py::TestSnake::test_snake_grow PASSED                    [ 14%]
+tests/test_game.py::TestSnake::test_snake_self_collision_no_collision PASSED [ 18%]
+tests/test_game.py::TestSnake::test_snake_self_collision_with_collision PASSED [ 22%]
+tests/test_game.py::TestFood::test_food_initialization PASSED            [ 25%]
+tests/test_game.py::TestFood::test_food_spawn PASSED                     [ 29%]
+tests/test_game.py::TestFood::test_food_spawn_avoid_positions PASSED     [ 33%]
+tests/test_game.py::TestFood::test_food_spawn_multiple_times PASSED      [ 37%]
+tests/test_game.py::TestGameBoard::test_gameboard_initialization PASSED  [ 40%]
+tests/test_game.py::TestGameBoard::test_is_within_bounds_valid PASSED    [ 44%]
+tests/test_game.py::TestGameBoard::test_is_within_bounds_invalid PASSED  [ 48%]
+tests/test_game.py::TestGameBoard::test_check_wall_collision_no_collision PASSED [ 51%]
+tests/test_game.py::TestGameBoard::test_check_wall_collision_with_collision PASSED [ 55%]
+tests/test_game.py::TestGameBoard::test_gameboard_custom_size PASSED     [ 59%]
+tests/test_game.py::TestSnakeGame::test_initial_state PASSED             [ 62%]
+tests/test_game.py::TestSnakeGame::test_game_initialization PASSED       [ 66%]
+tests/test_game.py::TestSnakeGame::test_snake_eating_food PASSED         [ 70%]
+tests/test_game.py::TestSnakeGame::test_wall_collision PASSED            [ 74%]
+tests/test_game.py::TestSnakeGame::test_self_collision PASSED            [ 77%]
+tests/test_game.py::TestSnakeGame::test_is_game_over PASSED              [ 81%]
+tests/test_game.py::TestWindowResizing::test_window_is_resizable PASSED  [ 85%]
+tests/test_game.py::TestWindowResizing::test_cell_size_calculation PASSED [ 88%]
+tests/test_game.py::TestWindowResizing::test_window_resize_handler PASSED [ 92%]
+tests/test_game.py::TestWindowResizing::test_button_positioning_on_resize PASSED [ 96%]
+tests/test_game.py::TestWindowResizing::test_game_logic_unchanged_by_resize PASSED [100%]
+
+=============================== warnings summary ===============================
+tests/test_game.py::TestSnakeGame::test_initial_state
+  /home/engine/.local/lib/python3.12/site-packages/pygame/pkgdata.py:25: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+    from pkg_resources import resource_stream, resource_exists
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 27 passed, 1 warning in 0.36s =========================
