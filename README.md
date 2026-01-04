@@ -64,7 +64,7 @@ snakegame
 - Mỗi thức ăn tăng 1 điểm
 - Rắn dài ra sau mỗi lần ăn
 - Tốc độ tăng dần, có giới hạn tối đa
-- Ván chơi kết thúc khi đụng tường hoặc tự cắn mình
+- Ván chơi kết thúc khi tự cắn mình
 
 ## Cấu trúc thư mục
 
