@@ -14,7 +14,7 @@ from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED_INITIAL, GAME_SPEE
                         COLOR_HIGHLIGHT, STATE_MENU, STATE_PLAYING, STATE_GAME_OVER,
                         STATE_PAUSED,
                         BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_MARGIN, MIN_WINDOW_WIDTH,
-                        MIN_WINDOW_HEIGHT)
+                        MIN_WINDOW_HEIGHT, PANEL_WIDTH)
 from src.utils import is_valid_direction
 
 class SnakeGame:
