@@ -12,6 +12,7 @@ from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED_INITIAL, GAME_SPEE
                         COLOR_BACKGROUND, COLOR_BORDER, COLOR_TEXT, COLOR_BUTTON,
                         COLOR_BUTTON_HOVER, COLOR_BUTTON_TEXT, COLOR_TITLE, COLOR_SUBTITLE,
                         COLOR_HIGHLIGHT, STATE_MENU, STATE_PLAYING, STATE_GAME_OVER,
+                        STATE_PAUSED,
                         BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_MARGIN, MIN_WINDOW_WIDTH,
                         MIN_WINDOW_HEIGHT)
 from src.utils import is_valid_direction
@@ -222,6 +223,8 @@ class SnakeGame:
             self._render_menu()
         elif self.current_state == STATE_PLAYING:
             self._render_game()
+        elif self.current_state == STATE_PAUSED:
+            self._render_paused()
         elif self.current_state == STATE_GAME_OVER:
             self._render_game_over()
 
@@ -236,7 +239,11 @@ class SnakeGame:
         self.window.blit(title_text, title_rect)
         
         # Draw subtitle (instructions) - moved to center area
-        subtitle_text = self.font_small.render("Use Arrow Keys/WASD to move, Q/ESC to quit", True, COLOR_SUBTITLE)
+        subtitle_text = self.font_small.render(
+            "Use Arrow Keys/WASD to move, P to pause, Q/ESC to quit",
+            True,
+            COLOR_SUBTITLE
+        )
         subtitle_rect = subtitle_text.get_rect(center=(self.window_width // 2, self.window_height // 2 - 60))
         self.window.blit(subtitle_text, subtitle_rect)
         
@@ -259,7 +266,11 @@ class SnakeGame:
         self.window.blit(high_score_text, high_score_rect)
         
         # Draw instructions
-        instruction_text = self.font_small.render("Click PLAY or press ENTER to start", True, COLOR_SUBTITLE)
+        instruction_text = self.font_small.render(
+            "Click PLAY or press ENTER to start",
+            True,
+            COLOR_SUBTITLE
+        )
         instruction_rect = instruction_text.get_rect(center=(self.window_width // 2, self.window_height // 2 + BUTTON_HEIGHT + 30))
         self.window.blit(instruction_text, instruction_rect)
     
@@ -357,12 +368,28 @@ class SnakeGame:
         self.window.blit(menu_text, menu_text_rect)
 
         # Render instructions
-        instruction_text = self.font_small.render("SPACE=Play Again, M=Menu, Q/ESC=Quit", True, COLOR_SUBTITLE)
+        instruction_text = self.font_small.render(
+            "SPACE=Play Again, M=Menu, Q/ESC=Quit",
+            True,
+            COLOR_SUBTITLE
+        )
         instruction_rect = instruction_text.get_rect(center=(self.window_width // 2, button_y + BUTTON_HEIGHT + 40))
         self.window.blit(instruction_text, instruction_rect)
         
         # Store button rects for click detection
         self._current_button_rects = {'play_again': play_again_rect, 'menu': menu_rect}
+
+    def _render_paused(self):
+        """Render paused state overlay"""
+        self._render_game()
+
+        overlay_text = self.font_large.render("PAUSED", True, COLOR_HIGHLIGHT)
+        overlay_rect = overlay_text.get_rect(center=(self.window_width // 2, self.window_height // 2 - 40))
+        self.window.blit(overlay_text, overlay_rect)
+
+        instruction_text = self.font_small.render("P/ENTER=Resume, R=Restart, Q/ESC=Quit", True, COLOR_SUBTITLE)
+        instruction_rect = instruction_text.get_rect(center=(self.window_width // 2, self.window_height // 2 + 40))
+        self.window.blit(instruction_text, instruction_rect)
     
     def handle_input(self):
         """Handle user keyboard input and mouse clicks based on current state"""
@@ -408,6 +435,12 @@ class SnakeGame:
             elif event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
                 self.game_running = False
                 return
+            elif event.key == pygame.K_p:
+                self.current_state = STATE_PAUSED
+                return
+            elif event.key == pygame.K_r:
+                self._start_game()
+                return
             
             # Update direction if new direction is valid
             if new_dir is not None and is_valid_direction(current_dir, new_dir):
@@ -418,6 +451,13 @@ class SnakeGame:
                 self._start_game()
             elif event.key == pygame.K_m:
                 self._go_to_menu()
+            elif event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
+                self.game_running = False
+        elif self.current_state == STATE_PAUSED:
+            if event.key == pygame.K_p or event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                self.current_state = STATE_PLAYING
+            elif event.key == pygame.K_r:
+                self._start_game()
             elif event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
                 self.game_running = False
     

@@ -377,6 +377,29 @@ class TestSnakeGame:
         game.game_over = True
         assert game.is_game_over() is True
 
+    def test_pause_resume_and_restart(self):
+        """Test pause, resume, and restart behavior"""
+        import os
+        os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+        import pygame
+        from src.game import SnakeGame
+        from src.config import STATE_PLAYING, STATE_PAUSED
+
+        game = SnakeGame()
+        game.current_state = STATE_PLAYING
+
+        game._handle_keyboard_input(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_p))
+        assert game.current_state == STATE_PAUSED
+
+        game._handle_keyboard_input(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_p))
+        assert game.current_state == STATE_PLAYING
+
+        game.score = 5
+        game._handle_keyboard_input(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_r))
+        assert game.current_state == STATE_PLAYING
+        assert game.score == 0
+
 
 class TestWindowResizing:
     """Tests for window resizing functionality"""
