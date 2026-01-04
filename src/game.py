@@ -30,8 +30,8 @@ class SnakeGame:
 
         # Initialize pygame display with resizable flag
         pygame.init()
-        self.window_width = DEFAULT_WINDOW_WIDTH
-        self.window_height = DEFAULT_WINDOW_HEIGHT
+        self.window_width = MIN_WINDOW_WIDTH
+        self.window_height = MIN_WINDOW_HEIGHT
         self.window = pygame.display.set_mode((self.window_width, self.window_height), pygame.RESIZABLE)
         pygame.display.set_caption("Snake Game")
 
