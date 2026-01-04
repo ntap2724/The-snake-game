@@ -14,7 +14,11 @@ from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED_INITIAL, GAME_SPEE
                         COLOR_HIGHLIGHT, STATE_MENU, STATE_PLAYING, STATE_GAME_OVER,
                         STATE_PAUSED,
                         BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_MARGIN, MIN_WINDOW_WIDTH,
-                        MIN_WINDOW_HEIGHT, PANEL_WIDTH)
+                        MIN_WINDOW_HEIGHT, PANEL_WIDTH_RATIO, PANEL_WIDTH_MIN,
+                        PANEL_WIDTH_MAX, PANEL_PADDING, BUTTON_SPACING,
+                        COLOR_PANEL_BG, COLOR_PANEL_DIVIDER, COLOR_BUTTON_PRIMARY,
+                        COLOR_BUTTON_PRIMARY_HOVER, COLOR_BUTTON_SECONDARY,
+                        COLOR_BUTTON_SECONDARY_HOVER)
 from src.utils import is_valid_direction
 
 class SnakeGame:
@@ -58,9 +62,16 @@ class SnakeGame:
         # Collision grace period to prevent immediate collision detection
         self.collision_grace_period = 3  # Allow 3 frames before collision detection
 
-    def _get_layout(self):
+    def _get_layout(self, include_panel=True):
         """Calculate layout rectangles for game and UI panels"""
-        available_width = max(0, self.window_width - PANEL_WIDTH)
+        if not include_panel:
+            game_rect = pygame.Rect(0, 0, self.window_width, self.window_height)
+            ui_rect = pygame.Rect(self.window_width, 0, 0, self.window_height)
+            return game_rect, ui_rect
+
+        panel_width = int(self.window_width * PANEL_WIDTH_RATIO)
+        panel_width = max(PANEL_WIDTH_MIN, min(PANEL_WIDTH_MAX, panel_width))
+        available_width = max(0, self.window_width - panel_width)
         game_size = min(available_width, self.window_height)
         game_size = max(0, game_size)
 
@@ -228,11 +239,6 @@ class SnakeGame:
         # Clear screen
         self.window.fill(COLOR_BACKGROUND)
 
-        # Draw layout borders
-        game_rect, ui_rect = self._get_layout()
-        pygame.draw.rect(self.window, COLOR_BORDER, game_rect, 2)
-        pygame.draw.rect(self.window, COLOR_BORDER, ui_rect, 2)
-
         # Render based on current state
         if self.current_state == STATE_MENU:
             self._render_menu()
@@ -286,12 +292,23 @@ class SnakeGame:
             True,
             COLOR_SUBTITLE
         )
-        instruction_rect = instruction_text.get_rect(center=(self.window_width // 2, self.window_height // 2 + BUTTON_HEIGHT + 30))
+        instruction_rect = instruction_text.get_rect(
+            center=(self.window_width // 2, self.window_height // 2 + BUTTON_HEIGHT + 30)
+        )
         self.window.blit(instruction_text, instruction_rect)
     
     def _render_game(self):
         """Render the active game screen"""
         game_rect, ui_rect = self._get_layout()
+        pygame.draw.rect(self.window, COLOR_PANEL_BG, ui_rect)
+        pygame.draw.rect(self.window, COLOR_BORDER, game_rect, 2)
+        pygame.draw.line(
+            self.window,
+            COLOR_PANEL_DIVIDER,
+            (ui_rect.x, 0),
+            (ui_rect.x, self.window_height),
+            1
+        )
 
         # Get dynamic cell size
         cell_width, cell_height = self._get_cell_size()
@@ -325,34 +342,45 @@ class SnakeGame:
     def _render_ui_panel(self, ui_rect):
         """Render score and controls inside the UI panel"""
         score_text = self.font_medium.render(f"Score: {self.score}", True, COLOR_TEXT)
-        score_rect = score_text.get_rect(topleft=(ui_rect.x + 20, ui_rect.y + 20))
+        score_rect = score_text.get_rect(topleft=(ui_rect.x + PANEL_PADDING, ui_rect.y + PANEL_PADDING))
         self.window.blit(score_text, score_rect)
 
         high_score = self.high_score_manager.get_high_score()
         high_score_text = self.font_small.render(f"Best: {high_score}", True, COLOR_TEXT)
-        high_score_rect = high_score_text.get_rect(topleft=(ui_rect.x + 20, ui_rect.y + 60))
+        high_score_rect = high_score_text.get_rect(topleft=(ui_rect.x + PANEL_PADDING, ui_rect.y + 64))
         self.window.blit(high_score_text, high_score_rect)
 
         speed_text = self.font_small.render(f"Speed: {self.game_speed:.3f}s", True, COLOR_TEXT)
-        speed_rect = speed_text.get_rect(topleft=(ui_rect.x + 20, ui_rect.y + 85))
+        speed_rect = speed_text.get_rect(topleft=(ui_rect.x + PANEL_PADDING, ui_rect.y + 92))
         self.window.blit(speed_text, speed_rect)
 
-        button_y = ui_rect.y + 140
-        button_width = max(0, ui_rect.width - 40)
+        button_y = ui_rect.y + 160
+        button_width = max(0, ui_rect.width - PANEL_PADDING * 2)
 
         pause_label = "RESUME" if self.current_state == STATE_PAUSED else "PAUSE"
-        pause_rect = pygame.Rect(ui_rect.x + 20, button_y, button_width, BUTTON_HEIGHT)
-        restart_rect = pygame.Rect(ui_rect.x + 20, button_y + BUTTON_HEIGHT + 16, button_width, BUTTON_HEIGHT)
-        menu_rect = pygame.Rect(ui_rect.x + 20, button_y + 2 * (BUTTON_HEIGHT + 16), button_width, BUTTON_HEIGHT)
+        pause_rect = pygame.Rect(ui_rect.x + PANEL_PADDING, button_y, button_width, BUTTON_HEIGHT)
+        restart_rect = pygame.Rect(
+            ui_rect.x + PANEL_PADDING,
+            button_y + BUTTON_HEIGHT + BUTTON_SPACING,
+            button_width,
+            BUTTON_HEIGHT
+        )
+        menu_rect = pygame.Rect(
+            ui_rect.x + PANEL_PADDING,
+            button_y + 2 * (BUTTON_HEIGHT + BUTTON_SPACING),
+            button_width,
+            BUTTON_HEIGHT
+        )
 
         mouse_pos = pygame.mouse.get_pos()
-        for rect, label in [
-            (pause_rect, pause_label),
-            (restart_rect, "RESTART"),
-            (menu_rect, "MENU"),
-        ]:
-            color = COLOR_BUTTON_HOVER if rect.collidepoint(mouse_pos) else COLOR_BUTTON
-            pygame.draw.rect(self.window, color, rect)
+        button_specs = [
+            (pause_rect, pause_label, COLOR_BUTTON_PRIMARY, COLOR_BUTTON_PRIMARY_HOVER),
+            (restart_rect, "RESTART", COLOR_BUTTON_SECONDARY, COLOR_BUTTON_SECONDARY_HOVER),
+            (menu_rect, "MENU", COLOR_BUTTON_SECONDARY, COLOR_BUTTON_SECONDARY_HOVER),
+        ]
+        for rect, label, color, hover_color in button_specs:
+            draw_color = hover_color if rect.collidepoint(mouse_pos) else color
+            pygame.draw.rect(self.window, draw_color, rect)
             pygame.draw.rect(self.window, COLOR_BORDER, rect, 2)
             text = self.font_medium.render(label, True, COLOR_BUTTON_TEXT)
             text_rect = text.get_rect(center=rect.center)
@@ -409,12 +437,18 @@ class SnakeGame:
         mouse_pos = pygame.mouse.get_pos()
         
         # Play Again button
-        play_again_color = COLOR_BUTTON_HOVER if play_again_rect.collidepoint(mouse_pos) else COLOR_BUTTON
+        play_again_color = (
+            COLOR_BUTTON_PRIMARY_HOVER if play_again_rect.collidepoint(mouse_pos)
+            else COLOR_BUTTON_PRIMARY
+        )
         pygame.draw.rect(self.window, play_again_color, play_again_rect)
         pygame.draw.rect(self.window, COLOR_BORDER, play_again_rect, 2)
         
         # Menu button
-        menu_color = COLOR_BUTTON_HOVER if menu_rect.collidepoint(mouse_pos) else COLOR_BUTTON
+        menu_color = (
+            COLOR_BUTTON_SECONDARY_HOVER if menu_rect.collidepoint(mouse_pos)
+            else COLOR_BUTTON_SECONDARY
+        )
         pygame.draw.rect(self.window, menu_color, menu_rect)
         pygame.draw.rect(self.window, COLOR_BORDER, menu_rect, 2)
         
@@ -443,12 +477,13 @@ class SnakeGame:
         """Render paused state overlay"""
         self._render_game()
 
+        game_rect, _ = self._get_layout()
         overlay_text = self.font_large.render("PAUSED", True, COLOR_HIGHLIGHT)
-        overlay_rect = overlay_text.get_rect(center=(self.window_width // 2, self.window_height // 2 - 40))
+        overlay_rect = overlay_text.get_rect(center=(game_rect.centerx, game_rect.centery - 40))
         self.window.blit(overlay_text, overlay_rect)
 
         instruction_text = self.font_small.render("P/ENTER=Resume, R=Restart, Q/ESC=Quit", True, COLOR_SUBTITLE)
-        instruction_rect = instruction_text.get_rect(center=(self.window_width // 2, self.window_height // 2 + 40))
+        instruction_rect = instruction_text.get_rect(center=(game_rect.centerx, game_rect.centery + 40))
         self.window.blit(instruction_text, instruction_rect)
     
     def handle_input(self):
