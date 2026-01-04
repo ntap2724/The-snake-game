@@ -104,7 +104,7 @@ class SnakeGame:
 
     def _get_play_button_rect(self):
         """Get the rectangle for the play button"""
-        game_rect, _ = self._get_layout()
+        game_rect, _ = self._get_layout(include_panel=False)
         center_x = game_rect.centerx
         center_y = game_rect.centery
         return pygame.Rect(
@@ -255,10 +255,12 @@ class SnakeGame:
     
     def _render_menu(self):
         """Render the main menu screen"""
-        game_rect, _ = self._get_layout()
+        game_rect, _ = self._get_layout(include_panel=False)
         # Draw title
         title_text = self.font_title.render("SNAKE GAME", True, COLOR_TITLE)
-        title_rect = title_text.get_rect(center=(game_rect.centerx, game_rect.top + game_rect.height // 4))
+        title_rect = title_text.get_rect(
+            center=(game_rect.centerx, game_rect.top + int(game_rect.height * 0.22))
+        )
         self.window.blit(title_text, title_rect)
         
         # Draw subtitle (instructions) - moved to center area
@@ -267,7 +269,9 @@ class SnakeGame:
             True,
             COLOR_SUBTITLE
         )
-        subtitle_rect = subtitle_text.get_rect(center=(game_rect.centerx, game_rect.centery - 80))
+        subtitle_rect = subtitle_text.get_rect(
+            center=(game_rect.centerx, self.play_button_rect.top - 40)
+        )
         self.window.blit(subtitle_text, subtitle_rect)
         
         # Draw play button with hover effect
@@ -295,7 +299,7 @@ class SnakeGame:
             COLOR_SUBTITLE
         )
         instruction_rect = instruction_text.get_rect(
-            center=(self.window_width // 2, self.window_height // 2 + BUTTON_HEIGHT + 30)
+            center=(game_rect.centerx, self.play_button_rect.bottom + 36)
         )
         self.window.blit(instruction_text, instruction_rect)
     
@@ -356,19 +360,20 @@ class SnakeGame:
         speed_rect = speed_text.get_rect(topleft=(ui_rect.x + PANEL_PADDING, ui_rect.y + 92))
         self.window.blit(speed_text, speed_rect)
 
-        button_y = ui_rect.y + 160
-        button_width = max(0, ui_rect.width - PANEL_PADDING * 2)
+        button_y = speed_rect.bottom + 32
+        button_width = max(0, min(ui_rect.width - PANEL_PADDING * 2, 220))
+        button_x = ui_rect.x + (ui_rect.width - button_width) // 2
 
         pause_label = "RESUME" if self.current_state == STATE_PAUSED else "PAUSE"
-        pause_rect = pygame.Rect(ui_rect.x + PANEL_PADDING, button_y, button_width, BUTTON_HEIGHT)
+        pause_rect = pygame.Rect(button_x, button_y, button_width, BUTTON_HEIGHT)
         restart_rect = pygame.Rect(
-            ui_rect.x + PANEL_PADDING,
+            button_x,
             button_y + BUTTON_HEIGHT + BUTTON_SPACING,
             button_width,
             BUTTON_HEIGHT
         )
         menu_rect = pygame.Rect(
-            ui_rect.x + PANEL_PADDING,
+            button_x,
             button_y + 2 * (BUTTON_HEIGHT + BUTTON_SPACING),
             button_width,
             BUTTON_HEIGHT
@@ -396,15 +401,17 @@ class SnakeGame:
     
     def _render_game_over(self):
         """Render game over screen with final score and high score"""
-        game_rect, _ = self._get_layout()
+        game_rect, _ = self._get_layout(include_panel=False)
         # Render "Game Over" text
         game_over_text = self.font_large.render("GAME OVER", True, COLOR_SNAKE_HEAD)
-        game_over_rect = game_over_text.get_rect(center=(game_rect.centerx, game_rect.top + game_rect.height // 3))
+        game_over_rect = game_over_text.get_rect(
+            center=(game_rect.centerx, game_rect.top + int(game_rect.height * 0.28))
+        )
         self.window.blit(game_over_text, game_over_rect)
 
         # Render final score
         score_text = self.font_medium.render(f"Your Score: {self.score}", True, COLOR_TEXT)
-        score_rect = score_text.get_rect(center=(game_rect.centerx, game_over_rect.bottom + 60))
+        score_rect = score_text.get_rect(center=(game_rect.centerx, game_over_rect.bottom + 52))
         self.window.blit(score_text, score_rect)
 
         # Render high score (highlight if it was beaten)
@@ -414,11 +421,11 @@ class SnakeGame:
         else:
             high_score_text = self.font_medium.render(f"Best Score: {high_score}", True, COLOR_TEXT)
         
-        high_score_rect = high_score_text.get_rect(center=(game_rect.centerx, score_rect.bottom + 40))
+        high_score_rect = high_score_text.get_rect(center=(game_rect.centerx, score_rect.bottom + 32))
         self.window.blit(high_score_text, high_score_rect)
 
         # Render buttons
-        button_y = high_score_rect.bottom + 60
+        button_y = high_score_rect.bottom + 48
         
         # Play Again button
         play_again_rect = pygame.Rect(
