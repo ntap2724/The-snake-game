@@ -13,8 +13,8 @@ from src.config import (BOARD_WIDTH, BOARD_HEIGHT, GAME_SPEED_INITIAL, GAME_SPEE
                         COLOR_BUTTON_HOVER, COLOR_BUTTON_TEXT, COLOR_TITLE, COLOR_SUBTITLE,
                         COLOR_HIGHLIGHT, STATE_MENU, STATE_PLAYING, STATE_GAME_OVER,
                         STATE_PAUSED,
-                        BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_MARGIN, PANEL_WIDTH,
-                        MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
+                        BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_MARGIN, MIN_WINDOW_WIDTH,
+                        MIN_WINDOW_HEIGHT)
 from src.utils import is_valid_direction
 
 class SnakeGame:
@@ -30,8 +30,8 @@ class SnakeGame:
 
         # Initialize pygame display with resizable flag
         pygame.init()
-        self.window_width = MIN_WINDOW_WIDTH
-        self.window_height = MIN_WINDOW_HEIGHT
+        self.window_width = DEFAULT_WINDOW_WIDTH
+        self.window_height = DEFAULT_WINDOW_HEIGHT
         self.window = pygame.display.set_mode((self.window_width, self.window_height), pygame.RESIZABLE)
         pygame.display.set_caption("Snake Game")
 
@@ -444,9 +444,12 @@ class SnakeGame:
         self._render_game()
 
         overlay_text = self.font_large.render("PAUSED", True, COLOR_HIGHLIGHT)
-        game_rect, _ = self._get_layout()
-        overlay_rect = overlay_text.get_rect(center=game_rect.center)
+        overlay_rect = overlay_text.get_rect(center=(self.window_width // 2, self.window_height // 2 - 40))
         self.window.blit(overlay_text, overlay_rect)
+
+        instruction_text = self.font_small.render("P/ENTER=Resume, R=Restart, Q/ESC=Quit", True, COLOR_SUBTITLE)
+        instruction_rect = instruction_text.get_rect(center=(self.window_width // 2, self.window_height // 2 + 40))
+        self.window.blit(instruction_text, instruction_rect)
     
     def handle_input(self):
         """Handle user keyboard input and mouse clicks based on current state"""
