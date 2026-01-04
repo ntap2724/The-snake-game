@@ -50,6 +50,7 @@ class SnakeGame:
         self.score = 0
         self.game_over = False
         self.game_running = True
+        self.is_new_high_score = False
 
         # Collision grace period to prevent immediate collision detection
         self.collision_grace_period = 3  # Allow 3 frames before collision detection
@@ -102,6 +103,7 @@ class SnakeGame:
         # Initialize game state variables
         self.score = 0
         self.game_over = False
+        self.is_new_high_score = False
         
         # Reset collision grace period for new game
         self.collision_grace_period = 3
@@ -201,7 +203,7 @@ class SnakeGame:
         self.current_state = STATE_GAME_OVER
         
         # Update high scores
-        is_new_high_score = self.high_score_manager.update_score(self.score)
+        self.is_new_high_score = self.high_score_manager.update_score(self.score)
         self.high_score_manager.update_last_game_score(self.score)
     
     def render(self):
@@ -302,9 +304,7 @@ class SnakeGame:
 
         # Render high score (highlight if it was beaten)
         high_score = self.high_score_manager.get_high_score()
-        is_new_high_score = self.score == high_score and self.score > 0
-        
-        if is_new_high_score:
+        if self.is_new_high_score:
             high_score_text = self.font_medium.render(f"NEW BEST SCORE! {high_score}", True, COLOR_HIGHLIGHT)
         else:
             high_score_text = self.font_medium.render(f"Best Score: {high_score}", True, COLOR_TEXT)

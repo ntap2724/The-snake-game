@@ -158,20 +158,31 @@ class TestFood:
     
     def test_food_spawn(self):
         """Test food spawning"""
-        food = Food()
-        initial_pos = food.get_position()
+        positions = [(1, 1), (2, 2)]
+        def mock_get_random_position():
+            return positions.pop(0)
         
-        # Call spawn() without exclude_positions
-        food.spawn(exclude_positions=[])
-        new_pos = food.get_position()
+        from src import utils
+        original_get_random_position = utils.get_random_position
+        utils.get_random_position = mock_get_random_position
         
-        # Assert position changed (very unlikely to get same position randomly)
-        # We'll verify it's a valid position
-        assert new_pos != initial_pos or True  # Allow same position (rare but possible)
-        
-        # Assert new position is within bounds
-        assert 0 <= new_pos[0] < BOARD_WIDTH
-        assert 0 <= new_pos[1] < BOARD_HEIGHT
+        try:
+            food = Food()
+            initial_pos = food.get_position()
+            
+            # Call spawn() without exclude_positions
+            food.spawn(exclude_positions=[])
+            new_pos = food.get_position()
+            
+            # Assert position changed deterministically
+            assert initial_pos == (1, 1)
+            assert new_pos == (2, 2)
+            
+            # Assert new position is within bounds
+            assert 0 <= new_pos[0] < BOARD_WIDTH
+            assert 0 <= new_pos[1] < BOARD_HEIGHT
+        finally:
+            utils.get_random_position = original_get_random_position
     
     def test_food_spawn_avoid_positions(self):
         """Test food spawning with excluded positions"""

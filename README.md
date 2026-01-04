@@ -53,7 +53,7 @@ snakegame
 - Each food eaten increases your score by 1
 - Snake grows longer with each food eaten
 - Game ends if snake collides with walls or itself
-- Game speed increases as score increases
+- Game speed is constant during play
 
 ## Project Structure
 
