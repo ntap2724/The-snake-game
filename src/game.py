@@ -72,13 +72,9 @@ class SnakeGame:
         panel_width = int(self.window_width * PANEL_WIDTH_RATIO)
         panel_width = max(PANEL_WIDTH_MIN, min(PANEL_WIDTH_MAX, panel_width))
         available_width = max(0, self.window_width - panel_width)
-        game_size = min(available_width, self.window_height)
-        game_size = max(0, game_size)
+        game_rect = pygame.Rect(0, 0, available_width, self.window_height)
 
-        game_rect = pygame.Rect(0, 0, game_size, game_size)
-        game_rect.y = (self.window_height - game_rect.height) // 2
-
-        ui_rect = pygame.Rect(game_rect.width, 0, self.window_width - game_rect.width, self.window_height)
+        ui_rect = pygame.Rect(game_rect.width, 0, panel_width, self.window_height)
         return game_rect, ui_rect
 
     def _get_cell_size(self):
