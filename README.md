@@ -1,94 +1,98 @@
 # The Snake Game
 
-A classic Snake game implementation in Python.
+Trò chơi Rắn săn mồi (Snake) viết bằng Python, có menu, tạm dừng, theo dõi điểm cao và cửa sổ có thể thay đổi kích thước.
 
-## Description
-A simple but complete Snake game where players control a snake to eat food and grow longer while avoiding collisions with walls and the snake's own body.
+## Mô tả
+Điều khiển rắn ăn thức ăn để tăng chiều dài và điểm số. Trò chơi kết thúc khi rắn chạm vào tường hoặc chính mình. Tốc độ sẽ tăng dần theo số thức ăn đã ăn.
 
-## Installation
+## Tính năng chính
 
-1. Clone the repository
-2. Create a virtual environment:
-   **Windows (PowerShell or CMD):**
+- Menu bắt đầu, màn hình Game Over và trạng thái tạm dừng
+- Điều khiển bằng phím mũi tên hoặc WASD
+- Điểm cao và thống kê số ván chơi được lưu vào `high_scores.json`
+- Cửa sổ có thể thay đổi kích thước và tự căn chỉnh giao diện
+
+## Cài đặt
+
+1. Clone repository
+2. Tạo môi trường ảo:
+   **Windows (PowerShell hoặc CMD):**
    ```bash
    python -m venv venv
    venv\Scripts\activate
    ```
-   
+
    **Mac/Linux (Bash/Zsh):**
    ```bash
    python -m venv venv
    source venv/bin/activate
    ```
 
-3. Install dependencies:
+3. Cài đặt phụ thuộc:
    ```bash
    pip install -r requirements.txt
    ```
 
-4. Install the package:
+4. Cài đặt package (để dùng lệnh `snakegame`):
    ```bash
    pip install -e .
    ```
 
-## How to Run
+## Cách chạy
 
 ```bash
 python -m src.main
 ```
 
-Or:
+Hoặc:
 ```bash
 snakegame
 ```
 
-## Game Controls
+## Điều khiển
 
-- **Arrow Keys**: Move the snake (Up, Down, Left, Right)
-- **Q**: Quit the game
+- **Mũi tên / WASD**: Di chuyển rắn
+- **P**: Tạm dừng / tiếp tục
+- **R**: Chơi lại nhanh khi đang chơi hoặc tạm dừng
+- **Enter**: Bắt đầu từ menu / tiếp tục khi tạm dừng
+- **Q / ESC**: Thoát
+- **SPACE**: Chơi lại ở màn hình Game Over
+- **M**: Về menu ở màn hình Game Over
 
-## Game Mechanics
+## Cơ chế trò chơi
 
-- Control the snake to eat food
-- Each food eaten increases your score by 1
-- Snake grows longer with each food eaten
-- Game ends if snake collides with walls or itself
-- Game speed is constant during play
+- Mỗi thức ăn tăng 1 điểm
+- Rắn dài ra sau mỗi lần ăn
+- Tốc độ tăng dần, có giới hạn tối đa
+- Ván chơi kết thúc khi đụng tường hoặc tự cắn mình
 
-## Project Structure
+## Cấu trúc thư mục
 
 ```
 src/
-  ├── main.py        - Game entry point
-  ├── game.py        - Core game engine
-  ├── snake.py       - Snake class
-  ├── food.py        - Food class
-  ├── game_board.py  - Game board/arena
-  ├── config.py      - Configuration constants
-  └── utils.py       - Utility functions
+  ├── main.py        - Điểm vào trò chơi
+  ├── game.py        - Vòng lặp và trạng thái trò chơi
+  ├── snake.py       - Lớp Snake
+  ├── food.py        - Lớp Food
+  ├── game_board.py  - Lưới/khung chơi
+  ├── high_score.py  - Lưu và đọc điểm cao
+  ├── config.py      - Hằng số cấu hình
+  └── utils.py       - Hàm tiện ích
 
 tests/
   └── test_game.py   - Unit tests
 ```
 
-## Development
+## Phát triển
 
-Run tests:
+Chạy test:
 ```bash
 pytest tests/
 ```
 
-## Requirements
+## Yêu cầu
 
 - Python 3.10+
-- Pygame 2.5.3+ (for rendering)
-- Pytest 7.4.3 (for testing)
-- setuptools
-- wheel
-
-## Future Enhancements
-
-- Sound effects
-- Multiple difficulty levels
-- Highscore tracking
-- Power-ups and obstacles
+- Pygame 2.5.3+ (hiển thị)
+- Pytest 7.4.3 (test)
+- setuptools, wheel
