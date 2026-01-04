@@ -18,3 +18,8 @@ class GameBoard:
     def check_wall_collision(self, position):
         """Check if a position collides with board walls"""
         return not self.is_within_bounds(position)
+
+    def wrap_position(self, position):
+        """Wrap a position to the opposite side when it exits the board"""
+        x, y = position
+        return (x % self.width, y % self.height)
