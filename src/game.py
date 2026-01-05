@@ -172,9 +172,6 @@ class SnakeGame:
             - Check wall collision (game over)
             - Check self collision (game over)
         """
-        # Store previous body to check for collision properly
-        previous_body = self.snake.get_body().copy()
-        
         # Move the snake in current direction
         self.snake.move(self.snake.direction)
         
@@ -192,14 +189,11 @@ class SnakeGame:
             self.snake.body[0] = self.board.wrap_position(head_position)
 
         # Check for collisions using the proper logic
-        if self._check_collisions(previous_body):
+        if self._check_collisions():
             self._end_game()
     
-    def _check_collisions(self, previous_body):
+    def _check_collisions(self):
         """Check for all collision types that end the game
-        
-        Args:
-            previous_body: Body state before the current move
             
         Returns:
             bool: True if any collision detected (game over), False otherwise
@@ -210,13 +204,10 @@ class SnakeGame:
         
         Note: Food collision is handled separately in update() as it doesn't end the game
         """
-        # Check self collision using the previous body state
-        # Fix: Check if head position is in the body segments that were NOT the head
+        # Check self collision using the current body state (excluding head)
         # This prevents false collision when snake moves into the space vacated by its tail
         head_position = self.snake.get_head_position()
-        # Check against previous body segments excluding what was the previous head
-        # This allows the snake to move into the space where its tail was
-        body_without_head = previous_body[1:]  # All segments except the previous head
+        body_without_head = self.snake.get_body()[1:]
         if head_position in body_without_head:
             return True
         
